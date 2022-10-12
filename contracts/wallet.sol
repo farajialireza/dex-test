@@ -4,8 +4,9 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
-contract Wallet {
+contract Wallet is Ownable {
     using SafeMath for uint256;
 
     struct Token {
@@ -20,8 +21,15 @@ contract Wallet {
 
     // need double mapping for multiple balances
     mapping(address => mapping(bytes32 => uint256)) public balances;
+
+    modifier tokenExist(bytes32 ticker) {
+        // check if token exists
+        require(tokenMapping[ticker].tokenAddress != address(0), "Token does not exist");
+        _;
+    }
     
-    function addToken(bytes32 ticker, address tokenAddress) external {
+    // onlyOwner added to just permit the contract owner to add new token
+    function addToken(bytes32 ticker, address tokenAddress) onlyOwner external {
         // create new token
         tokenMapping[ticker] = Token(ticker, tokenAddress);
 
@@ -29,16 +37,14 @@ contract Wallet {
         tokenList.push(ticker);
     }
 
-    function deposit(uint amount, bytes32 ticker) external {
+    function deposit(uint amount, bytes32 ticker) tokenExist(ticker) external {
+        // trasfer amount from user to our contract address
+        IERC20(tokenMapping[ticker].tokenAddress).transferFrom(msg.sender, address(this), amount);
         // add amount to user wallet
         balances[msg.sender][ticker] = balances[msg.sender][ticker].add(amount);
-        // trasfer amount from user to contract address
-        IERC20(tokenMapping[ticker].tokenAddress).transfer(address(this), amount);
     }
 
-    function withdraw(uint amount, bytes32 ticker) external {
-        // check if token exists
-        require(tokenMapping[ticker].tokenAddress != address(0), "Token Does not exist");
+    function withdraw(uint amount, bytes32 ticker) tokenExist(ticker) external {
         // check if user balance is enough
         require(balances[msg.sender][ticker] >= amount, "Balance not sufficient");
 
