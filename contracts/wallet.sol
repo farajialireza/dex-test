@@ -39,6 +39,7 @@ contract Wallet is Ownable {
 
     function deposit(uint amount, bytes32 ticker) tokenExist(ticker) external {
         // trasfer amount from user to our contract address
+        // msg.sender is Wallet contract as user of Tokens contract and is trying to send amount from Tokens contract so must be approved 
         IERC20(tokenMapping[ticker].tokenAddress).transferFrom(msg.sender, address(this), amount);
         // add amount to user wallet
         balances[msg.sender][ticker] = balances[msg.sender][ticker].add(amount);
