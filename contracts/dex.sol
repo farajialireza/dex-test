@@ -35,13 +35,13 @@ contract Dex is Wallet {
         return orderBook[ticker][uint256(side)];
     }
 
-    function depositEth() public payable {
+    function depositEth() payable public {
         balances[msg.sender][bytes32("ETH")] = balances[msg.sender][bytes32("ETH")].add(msg.value);
     }
 
     function createLimitOrder(Side side, bytes32 ticker, uint256 amount, uint256 price) public {
         if (side == Side.Buy) {
-            require(balances[msg.sender]["ETH"] >= amount.mul(price));
+            require(balances[msg.sender][bytes32("ETH")] >= amount.mul(price));
         } else if (side == Side.SELL) {
             require(balances[msg.sender][ticker] >= amount);
         }
